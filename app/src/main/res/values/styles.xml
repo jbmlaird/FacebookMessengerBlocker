@@ -1,0 +1,19 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat">
+        <item name="colorPrimary">@android:color/holo_red_dark</item>
+        <item name="colorPrimaryDark">#990000</item>
+        <item name="android:actionBarStyle">@style/AppTheme.ActionBarStyle</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.ActionBarStyle" parent="Theme.AppCompat.Light">
+        <item name="android:titleTextStyle">@style/AppTheme.ActionBarStyle.TitleTextStyle</item>
+    </style>
+
+    <style name="AppTheme.ActionBarStyle.TitleTextStyle" parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+</resources>

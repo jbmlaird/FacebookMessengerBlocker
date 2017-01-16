@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DrunkMessengerBlocker</string>
+    <string name="accessibility_description">You will be shown a warning on enabling this service. The only key press that I track is the back button to ensure that the user closes the conversation.
+
+        \n\nFor more information, please email jbmlaird@gmail.com</string>
+    <string name="stored_name">stored_name</string>
+</resources>
