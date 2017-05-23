@@ -14,7 +14,6 @@ import bj.drunkmessengerblocker.R;
 /**
  * Created by j on 16/01/2017.
  */
-
 @Singleton
 public class SharedPrefsManager
 {

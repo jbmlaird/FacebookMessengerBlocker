@@ -15,31 +15,37 @@ import android.view.accessibility.AccessibilityWindowInfo;
 
 import java.util.List;
 
-import javax.inject.Singleton;
+import javax.inject.Inject;
 
+import bj.drunkmessengerblocker.App;
 import bj.drunkmessengerblocker.R;
+import bj.drunkmessengerblocker.utils.SharedPrefsManager;
 
 /**
  * Created by j on 15/01/2017.
+ * <p>
+ * Accessibility service that monitors wants on the screen.
  */
-
-@Singleton
 public class MyAccessibilityService extends AccessibilityService
 {
+    @Inject SharedPrefsManager sharedPrefsManager;
     private View disablingView;
-    private View thinkAboutView;
     private Handler handler;
     private WindowManager.LayoutParams windowManagerParams;
     private WindowManager wm;
-    private LayoutInflater layoutInflater;
 
     @Override
     public void onCreate()
     {
+        super.onCreate();
         // Handler will get associated with the current thread,
         // which is the main thread.
         handler = new Handler();
-        super.onCreate();
+        DaggerServiceComponent.builder()
+                .appComponent(App.component)
+                .serviceModule(new ServiceModule(this))
+                .build()
+                .inject(this);
     }
 
     private void runOnUiThread(Runnable runnable)
@@ -58,13 +64,12 @@ public class MyAccessibilityService extends AccessibilityService
                     // User resumed Messenger
                 }
         }
+        // Ignore accessibility events we don't care about
         if (accessibilityEvent.getContentDescription() == null || accessibilityEvent.getContentDescription() == "\uD83D\uDC0E"
                 || accessibilityEvent.getContentDescription() == "\uD83D\uDC0E, " || accessibilityEvent.getContentDescription() == "Free Call"
                 || accessibilityEvent.getContentDescription() == "Free Video Call" || accessibilityEvent.getContentDescription() == "Thread Details"
                 || accessibilityEvent.getContentDescription() == "Like" || accessibilityEvent.getContentDescription() == "Send")
-        {
             return;
-        }
         final AccessibilityNodeInfo source = accessibilityEvent.getSource();
         runOnUiThread(new Runnable()
         {
@@ -73,36 +78,31 @@ public class MyAccessibilityService extends AccessibilityService
             {
                 Log.i("Event", accessibilityEvent.toString() + "");
                 Log.i("Source", source.toString() + "");
-//        Log.i("Class name", accessibilityEvent.getClassName().toString());
-//        Log.i("Window id", source.getWindowId() + "");
-//        Log.i("View id", source.getViewIdResourceName() + "");
 
+                // Check if a user has opened a chat window
                 if (source.getClassName().equals("android.widget.FrameLayout") && source.getContentDescription() != null && !source.getContentDescription().toString().isEmpty())
                 {
-                    // Check if the name is blacklisted
-                    if (source.getContentDescription().toString().contains("Katy Perry"))
+                    for (String storedName : sharedPrefsManager.getStoredNames())
                     {
-                        Log.i("CAUGHT EVENT", accessibilityEvent.toString() + "");
-                        disablingView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.cover_screen, null);
-                        disablingView.setClickable(true);
-                        disablingView.setLayoutParams(windowManagerParams);
-                        wm.addView(disablingView, windowManagerParams);
-//                        Instrumentation inst = new Instrumentation();
-//                        inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
-//            if (source.getClassName().equals("android.widget.TextView") && source.getParent() != null && source.getParent().getClassName().equals("android.widget.FrameLayout") && source.getParent().getParent() == null)
-//            {
-//                return recivedText;
-//            }
+                        // If it matches something in the blacklist, display the system window
+                        if (source.getContentDescription().toString().contains(storedName))
+                        {
+                            Log.i("CAUGHT EVENT", accessibilityEvent.toString() + "");
+                            disablingView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.cover_screen, null);
+                            disablingView.setClickable(true);
+                            disablingView.setLayoutParams(windowManagerParams);
+                            disablingView.setOnClickListener(new View.OnClickListener()
+                                                             {
+                                                                 @Override
+                                                                 public void onClick(View v)
+                                                                 {
+                                                                     Log.e("yeeson", "yeeeeeheheheheh");
+                                                                 }
+                                                             }
+                            );
+                            wm.addView(disablingView, windowManagerParams);
+                        }
                     }
-
-//        List<AccessibilityNodeInfo> findAccessibilityNodeInfosByViewId = source.findAccessibilityNodeInfosByViewId("YOUR PACKAGE NAME:id/RESOURCE ID FROM WHERE YOU WANT DATA");
-//        if (findAccessibilityNodeInfosByViewId.size() > 0)
-//        {
-//            AccessibilityNodeInfo parent = (AccessibilityNodeInfo) findAccessibilityNodeInfosByViewId.get(0);
-//            // You can also traverse the list if required data is deep in view hierarchy.
-//            String requiredText = parent.getText().toString();
-//            Log.i("Required Text", requiredText);
-//        }
                 }
             }
         });
@@ -114,6 +114,9 @@ public class MyAccessibilityService extends AccessibilityService
 
     }
 
+    /**
+     * Initialise Service settings.
+     */
     @Override
     public void onServiceConnected()
     {
@@ -121,11 +124,12 @@ public class MyAccessibilityService extends AccessibilityService
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT);
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-        layoutInflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
         Log.e("Accessibility Service", "Service connected");
         AccessibilityServiceInfo info = getServiceInfo();
@@ -143,8 +147,6 @@ public class MyAccessibilityService extends AccessibilityService
         info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
         info.flags = AccessibilityServiceInfo.FLAG_REQUEST_ENHANCED_WEB_ACCESSIBILITY;
         info.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-//        info.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
-        // We are keeping the timeout to 0 as we don’t need any delay or to pause our accessibility events
         info.notificationTimeout = 0;
         this.setServiceInfo(info);
     }
@@ -161,36 +163,23 @@ public class MyAccessibilityService extends AccessibilityService
         return super.getRootInActiveWindow();
     }
 
+    /**
+     * Remove the system window if the user has pressed the back button.
+     */
     @Override
     protected boolean onKeyEvent(KeyEvent event)
     {
         if (event.getKeyCode() == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN)
         {
-            if (disablingView != null || thinkAboutView != null)
-                if (disablingView.isShown() || thinkAboutView.isShown())
+            if (disablingView != null && disablingView.isShown())
+                runOnUiThread(new Runnable()
                 {
-                    runOnUiThread(new Runnable()
+                    @Override
+                    public void run()
                     {
-                        @Override
-                        public void run()
-                        {
-                            wm.removeView(disablingView);
-                            thinkAboutView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.think_about_screen, null);
-                            thinkAboutView.setClickable(false);
-                            thinkAboutView.setLayoutParams(windowManagerParams);
-                            wm.addView(thinkAboutView, windowManagerParams);
-                            try
-                            {
-                                Thread.sleep(1000);
-                            }
-                            catch (InterruptedException e)
-                            {
-                                e.printStackTrace();
-                            }
-                            wm.removeView(thinkAboutView);
-                        }
-                    });
-                }
+                        wm.removeView(disablingView);
+                    }
+                });
         }
         return super.onKeyEvent(event);
     }

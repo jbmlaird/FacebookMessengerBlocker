@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical">
+
+    <com.aigestudio.wheelpicker.WheelPicker
+        android:id="@+id/wheelpicker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:wheel_curved="true"
+        app:wheel_data="@array/hours"
+        app:wheel_indicator="true"
+        app:wheel_indicator_color="@color/colorAccent"
+        app:wheel_item_text_size="22sp"
+        app:wheel_visible_item_count="4"/>
+
+</LinearLayout>
