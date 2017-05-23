@@ -1,7 +1,7 @@
 ![app_gif](https://media.giphy.com/media/TNrGtawLaLaLK/giphy.gif)
 
 # FacebookMessengerBlocker
-Block contacts on Facebook Messenger without blocking Messenger itself
+Other "drunk message" apps on the Store will block Messenger entirely but what if you're lost and need to meet up with your friends? You would have to use an external application. This app makes it possible to block specific contacts on Facebook Messenger without blocking Messenger itself. 
 
 # How
 Using Android's in-built [AccessibilityService](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.html) one is able to monitor screen changes. When the user opens a new Messenger chat and it has a name that the user has added to their blacklist, it will display a view over Messenger until they press back.
